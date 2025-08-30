@@ -11,7 +11,7 @@ import requests
 # url = './a01-122-02-00.jpg'
 # image = Image.open(url).convert("RGB")
 
-image = Image.open('./signal-2025-08-30-151532.jpeg').convert("RGB")
+image = Image.open('./reference_images/rbf_45_right_way.jpeg').convert("RGB")
 
 processor = TrOCRProcessor.from_pretrained('microsoft/trocr-base-printed')
 model = VisionEncoderDecoderModel.from_pretrained('microsoft/trocr-base-printed')
