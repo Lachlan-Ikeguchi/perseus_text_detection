@@ -1,46 +1,48 @@
 #! /usr/bin/python3.13
 
-import os, sys
+import os
+import sys
 import numpy as np
 import cv2
 import time
 from imutils.object_detection import non_max_suppression
 
+
 def east_detect(image):
     layerNames = [
-    	"feature_fusion/Conv_7/Sigmoid",
-    	"feature_fusion/concat_3"]
-    
-    orig = image.copy()
-    
+        "feature_fusion/Conv_7/Sigmoid",
+        "feature_fusion/concat_3"]
+
+    origional_image = image.copy()
+
     if len(image.shape) == 2:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-    
-    (H, W) = image.shape[:2]
-    
+
+    (height, width) = image.shape[:2]
+
     # set the new width and height and then determine the ratio in change
     # for both the width and height: Should be multiple of 32
-    (newW, newH) = (320, 320)
-    
-    rW = W / float(newW)
-    rH = H / float(newH)
-    
+    (new_width, new_height) = (320, 320)
+
+    resize_width = width / float(new_width)
+    resize_height = height / float(new_height)
+
     # resize the image and grab the new image dimensions
-    image = cv2.resize(image, (newW, newH))
-    
-    (H, W) = image.shape[:2]
-    
-    net = cv2.dnn.readNet("model/frozen_east_text_detection.pb")
-    
-    blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
-    	(123.68, 116.78, 103.94), swapRB=True, crop=False)
-    
+    image = cv2.resize(image, (new_width, new_height))
+
+    (height, width) = image.shape[:2]
+
+    net = cv2.dnn.readNet("frozen_east_text_detection.pb")
+
+    blob = cv2.dnn.blobFromImage(image, 1.0, (width, height),
+                                 (123.68, 116.78, 103.94), swapRB=True, crop=False)
+
     start = time.time()
-    
+
     net.setInput(blob)
-    
+
     (scores, geometry) = net.forward(layerNames)
-    
+
     (numRows, numCols) = scores.shape[2:4]
     rects = []
     confidences = []
@@ -55,13 +57,13 @@ def east_detect(image):
         xData2 = geometry[0, 2, y]
         xData3 = geometry[0, 3, y]
         anglesData = geometry[0, 4, y]
-    
+
         for x in range(0, numCols):
-    		# if our score does not have sufficient probability, ignore it
+            # if our score does not have sufficient probability, ignore it
             # Set minimum confidence as required
             if scoresData[x] < 0.5:
                 continue
-    		# compute the offset factor as our resulting feature maps will
+                # compute the offset factor as our resulting feature maps will
             #  x smaller than the input image
             (offsetX, offsetY) = (x * 4.0, y * 4.0)
             # extract the rotation angle for the prediction and then
@@ -83,25 +85,32 @@ def east_detect(image):
             # our respective lists
             rects.append((startX, startY, endX, endY))
             confidences.append(scoresData[x])
-                        
+
     boxes = non_max_suppression(np.array(rects), probs=confidences)
     # loop over the bounding boxes
     for (startX, startY, endX, endY) in boxes:
-    	# scale the bounding box coordinates based on the respective
-    	# ratios
-    	startX = int(startX * rW)
-    	startY = int(startY * rH)
-    	endX = int(endX * rW)
-    	endY = int(endY * rH)
-    	# draw the bounding box on the image
-    	cv2.rectangle(orig, (startX, startY), (endX, endY), (0, 255, 0), 2)
-    
-    
-    print(time.time() - start)
-    return orig
+        # scale the bounding box coordinates based on the respective
+        # ratios
+        startX = int(startX * resize_width)
+        startY = int(startY * resize_height)
+        endX = int(endX * resize_width)
+        endY = int(endY * resize_height)
+        # draw the bounding box on the image
+        cv2.rectangle(origional_image, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
-image = cv2.imread("sample_image.jpg")
+    print(time.time() - start)
+    return origional_image
+
+
+image = cv2.imread("reference_images/remove_before_flight.jpeg")
 
 out_image = east_detect(image)
 
 cv2.imwrite("sample_output.jpg", out_image)
+
+
+
+
+
+
+
