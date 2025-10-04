@@ -1,4 +1,4 @@
-#! /usr/bin/python3.13
+#! /usr/bin/env /usr/bin/python3.13
 
 import pytesseract as tes
 import cv2
